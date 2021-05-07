@@ -49,14 +49,14 @@ export const reducerUtils = {
 
 // 비동기 관련 액션들을 처리하는 리듀서를 만들어줍니다.
 // type 은 액션의 타입, key 는 상태의 key (예: posts, post) 입니다
-export const handleAsyncActions = (type, key) => {
+export const handleAsyncActions = (type, key, keepData = false) => {
     const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`];
     return (state, action) => {
         switch (action.type) {
             case type:
                 return {
                     ...state,
-                    [key]: reducerUtils.loading()
+                    [key]: reducerUtils.loading(keepData ? state[key].data : null)
                 };
             case SUCCESS:
                 return {
@@ -66,10 +66,40 @@ export const handleAsyncActions = (type, key) => {
             case ERROR:
                 return {
                     ...state,
-                    [key]: reducerUtils.error(action.payload)
+                    [key]: reducerUtils.error(action.error)
                 };
             default:
                 return state;
         }
     }
+}
+
+// 특정 id를 처리하는 thunk 생성함수
+const defaultIdSelector = param => param;
+export const createPromiseThunkById = (
+    type,
+    promiseCreator,
+    // 파라미터에서 id를 어떻게 선택할지 정의하는 함수입니다.
+    // 기본값으로는 파라미터를 그대로 id로 사용합니다.
+    // 하지만 만약 파라미터가 { id: 1, details: true } 이런 형태라면
+    // idSelector 를 param => param.id 이런식으로 설정할 수 있겠죠.
+    idSelector = defaultIdSelector
+) => {
+    const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`]
+    return param => async dispatch => {
+        const id = idSelector(param)
+        dispatch({ type, meta: id })
+        try {
+            const payload = await promiseCreator(param)
+            dispatch({ type: SUCCESS, payload, meta: id})
+        } catch (e) {
+            dispatch({ type: ERROR, error: true, payload: e, meta: id })
+        }
+    }
+}
+
+// id 별로 처리하는 유틸함수
+export const handleAsyncActionsById = (type, key, keepData = false) => {
+    const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`]
+    return (state, action) => {}
 }
