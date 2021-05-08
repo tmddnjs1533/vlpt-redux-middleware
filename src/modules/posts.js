@@ -1,5 +1,11 @@
 import * as postAPI from '../api/posts' // api/posts 안의 함수 모두 불러오기
-import {createPromiseThunk, handleAsyncActions, reducerUtils} from "../lib/asyncUtils";
+import {
+    createPromiseThunk,
+    reducerUtils,
+    handleAsyncActions,
+    createPromiseThunkById,
+    handleAsyncActionsById
+} from "../lib/asyncUtils";
 
 /**
  * 프로미스를 다루는 리덕스 모듈을 다룰 땐 다음과 같은 사항을 고려해야합니다.
@@ -20,19 +26,14 @@ const GET_POST = 'GET_POST';
 const GET_POST_SUCCESS = 'GET_POST_SUCCESS'
 const GET_POST_ERROR = 'GET_POST_ERROR'
 
-// 포스트 비우기
-const CLEAR_POST = 'CLEAR_POST'
-
 // 아주 쉽게 thunk 함수를 만들 수 있게 되었습니다.
 export const getPosts = createPromiseThunk(GET_POSTS, postAPI.getPosts);
-export const getPost = createPromiseThunk(GET_POST, postAPI.getPostById)
-
-export const clearPost = () => ({ type: CLEAR_POST })
+export const getPost = createPromiseThunkById(GET_POST, postAPI.getPostById)
 
 // initialState 쪽도 반복되는 코드를 initial() 함수를 사용해서 리팩토링 했습니다
 const initialState = {
     posts: reducerUtils.initial(),
-    post: reducerUtils.initial()
+    post: {}
 }
 
 export default function posts(state = initialState, action) {
@@ -44,12 +45,7 @@ export default function posts(state = initialState, action) {
         case GET_POST:
         case GET_POST_SUCCESS:
         case GET_POST_ERROR:
-            return handleAsyncActions(GET_POST, 'post')(state, action);
-        case CLEAR_POST:
-            return {
-                ...state,
-                post: reducerUtils.initial()
-            }
+            return handleAsyncActionsById(GET_POST, 'post', true)(state, action);
         default:
             return state;
     }

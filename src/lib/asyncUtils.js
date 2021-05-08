@@ -101,5 +101,38 @@ export const createPromiseThunkById = (
 // id 별로 처리하는 유틸함수
 export const handleAsyncActionsById = (type, key, keepData = false) => {
     const [SUCCESS, ERROR] = [`${type}_SUCCESS`, `${type}_ERROR`]
-    return (state, action) => {}
+    return (state, action) => {
+        const id = action.meta;
+        switch (action.type) {
+            case type:
+                return {
+                    ...state,
+                    [key]: {
+                        ...state[key],
+                        [id]:reducerUtils.loading(
+                            // state[key][id]기 만들어져있지 않을 수도 있으니까 유효성을 먼저 검사 후 data 조회
+                            keepData ? state[key][id] && state[key][id].data : null
+                        )
+                    }
+                };
+            case SUCCESS:
+                return {
+                    ...state,
+                    [key]: {
+                        ...state[key],
+                        [id]:reducerUtils.success(action.payload)
+                    }
+                };
+            case ERROR:
+                return {
+                    ...state,
+                    [key]: {
+                        ...state[key],
+                        [id]:reducerUtils.error(action.payload)
+                    }
+                };
+            default:
+                return state;
+        }
+    }
 }
